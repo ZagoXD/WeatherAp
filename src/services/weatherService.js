@@ -17,8 +17,7 @@ export const getCityName = async (latitude, longitude) => {
     if (response.data.results && response.data.results.length > 0) {
       const result = response.data.results[0];
       const city = result.components.city || result.components.town || 'Unknown Location';
-      const state = result.components.state_code || result.components.state || '';
-      return `${city} - ${state}`;
+      return city;
     }
     
     return 'Unknown Location';
@@ -37,20 +36,27 @@ export const getCurrentWeather = async (location) => {
       },
     });
 
-    return response.data.data[0];
+    const weatherData = response.data.data[0];
+    return {
+      temp: weatherData.temp,
+      weather: weatherData.weather,
+      precip: weatherData.precip, // Probabilidade de chuva (em mm)
+      rh: weatherData.rh, // Umidade relativa do ar (em %)
+    };
   } catch (error) {
     console.error('Error fetching current weather:', error);
     throw error;
   }
 };
 
-export const getHourlyForecast = async (location) => {
+export const getHourlyForecast = async (location, date) => {
   try {
     const response = await axios.get(`${BASE_URL}/forecast/hourly`, {
       params: {
         key: API_KEY,
         city: location,
-        hours: 12,
+        start_date: date,
+        end_date: date,
       },
     });
 
