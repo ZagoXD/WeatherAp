@@ -32,11 +32,10 @@ const iconMap = {
   'volcanic ash': require('../assets/icons/va.png'),
   'squalls': require('../assets/icons/squall.png'),
   'tornado': require('../assets/icons/tornado.png'),
-  // Adicione mais mapeamentos conforme necessário
 };
 
 const WeatherIcon = ({ condition, size = 100 }) => {
-  // Use o mapeamento para encontrar o ícone correspondente
+  
   const icon = iconMap[condition.toLowerCase()] || iconMap['clear'];
 
   return <Image source={icon} style={{ width: 50, height: 50 }} />;

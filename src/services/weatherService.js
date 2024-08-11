@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const API_KEY = '3856b072ab924f34a0c3a0f0024ba306'; // Substitua pela sua chave de API da Weatherbit
+const API_KEY = '3856b072ab924f34a0c3a0f0024ba306';
 const BASE_URL = 'https://api.weatherbit.io/v2.0';
-const OPENCAGE_API_KEY = '1360fdec45bc43a89bc5c9a01ca8e862'; // Substitua pela sua chave de API da OpenCage
+const OPENCAGE_API_KEY = '1360fdec45bc43a89bc5c9a01ca8e862';
 
 export const getCityName = async (latitude, longitude) => {
   try {
@@ -17,7 +17,7 @@ export const getCityName = async (latitude, longitude) => {
     if (response.data.results && response.data.results.length > 0) {
       const result = response.data.results[0];
       const city = result.components.city || result.components.town || 'Unknown Location';
-      const state = result.components.state_code || result.components.state || ''; // Extrai o código do estado ou nome do estado
+      const state = result.components.state_code || result.components.state || '';
       return `${city} - ${state}`;
     }
     
@@ -37,7 +37,7 @@ export const getCurrentWeather = async (location) => {
       },
     });
 
-    return response.data.data[0]; // A API retorna um array, então pegamos o primeiro elemento
+    return response.data.data[0];
   } catch (error) {
     console.error('Error fetching current weather:', error);
     throw error;
@@ -50,7 +50,7 @@ export const getHourlyForecast = async (location) => {
       params: {
         key: API_KEY,
         city: location,
-        hours: 12, // Pegamos as próximas 12 horas
+        hours: 12,
       },
     });
 
@@ -67,7 +67,7 @@ export const getWeeklyForecast = async (location) => {
       params: {
         key: API_KEY,
         city: location,
-        days: 7, // Pegamos os próximos 7 dias
+        days: 7,
       },
     });
 

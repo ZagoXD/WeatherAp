@@ -19,7 +19,7 @@ const App = () => {
   );
 };
 
-// Registrar o componente principal
+
 AppRegistry.registerComponent(appName, () => App);
 
 export default App;
