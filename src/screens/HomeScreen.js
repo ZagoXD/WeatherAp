@@ -26,13 +26,9 @@ const HomeScreen = () => {
         accuracy: Location.Accuracy.Highest,
       });
 
-      console.log('Latitude:', location.coords.latitude);
-      console.log('Longitude:', location.coords.longitude);
-
       setLocation(location);
 
       const fetchedCityName = await getCityName(location.coords.latitude, location.coords.longitude);
-      console.log('Cidade detectada:', fetchedCityName);
       setCityName(fetchedCityName);
 
       const current = await getCurrentWeather(fetchedCityName);
@@ -53,10 +49,13 @@ const HomeScreen = () => {
     return <Text>Aguardando dados meteorológicos...</Text>;
   }
 
+  const currentHour = new Date().getHours();
+  const timeOfDay = currentHour >= 6 && currentHour < 18 ? 'day' : 'night';
+
   return (
     <ScrollView style={{ flex: 1, padding: 20 }}>
       <View style={{ alignItems: 'center' }}>
-        <WeatherIcon condition={currentWeather.weather.description} />
+        <WeatherIcon condition={currentWeather.weather.description} timeOfDay={timeOfDay} size={100} />
         <Text style={{ fontSize: 48 }}>{currentWeather.temp}°</Text>
         <Text>{cityName}</Text> 
       </View>
