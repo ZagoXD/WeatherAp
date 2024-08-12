@@ -13,17 +13,34 @@ export const getCityName = async (latitude, longitude) => {
         pretty: 1,
       },
     });
-    
+
     if (response.data.results && response.data.results.length > 0) {
       const result = response.data.results[0];
-      const city = result.components.city || result.components.town || 'Unknown Location';
+      const city = result.components.city || result.components.town || result.components.village || 'Unknown Location';
       return city;
     }
-    
+
     return 'Unknown Location';
   } catch (error) {
     console.error('Error fetching city name:', error);
     return 'Unknown Location';
+  }
+};
+
+export const getHourlyForecast = async (location, date) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/forecast/hourly`, {
+      params: {
+        key: API_KEY,
+        city: location,
+        start_date: date,
+        end_date: date,
+      },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching hourly forecast:', error);
+    throw error;
   }
 };
 
@@ -40,29 +57,11 @@ export const getCurrentWeather = async (location) => {
     return {
       temp: weatherData.temp,
       weather: weatherData.weather,
-      precip: weatherData.precip, // Probabilidade de chuva (em mm)
-      rh: weatherData.rh, // Umidade relativa do ar (em %)
+      precip: weatherData.precip,
+      rh: weatherData.rh,
     };
   } catch (error) {
     console.error('Error fetching current weather:', error);
-    throw error;
-  }
-};
-
-export const getHourlyForecast = async (location, date) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/forecast/hourly`, {
-      params: {
-        key: API_KEY,
-        city: location,
-        start_date: date,
-        end_date: date,
-      },
-    });
-
-    return response.data.data;
-  } catch (error) {
-    console.error('Error fetching hourly forecast:', error);
     throw error;
   }
 };

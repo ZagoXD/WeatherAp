@@ -12,7 +12,7 @@ const HourlyForecast = ({ forecast }) => {
         return (
           <View key={index} style={{ alignItems: 'center', margin: 10 }}>
             <Text>{hour.timestamp_local.split('T')[1].slice(0, 5)}</Text>
-            <WeatherIcon condition={hour.weather.description} timeOfDay={timeOfDay} size={50} />
+            <WeatherIcon iconCode={hour.weather.icon} size={50} />
             <Text>{hour.temp}°</Text>
           </View>
         );

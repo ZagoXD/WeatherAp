@@ -14,7 +14,7 @@ const WeeklyForecast = ({ forecast, onDayPress, selectedDay, hourlyForecast }) =
           <TouchableOpacity onPress={() => onDayPress(day)}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', margin: 10 }}>
               <Text>{new Date(day.valid_date).toLocaleDateString('pt-BR', { weekday: 'long' })}</Text>
-              <WeatherIcon condition={day.weather.description} timeOfDay={timeOfDay} size={50} />
+              <WeatherIcon iconCode={day.weather.icon} size={50} />
               <Text>{day.min_temp}° / {day.max_temp}°</Text>
             </View>
           </TouchableOpacity>

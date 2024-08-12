@@ -5,80 +5,82 @@ import { getCityName, getCurrentWeather, getHourlyForecast, getWeeklyForecast } 
 import WeatherIcon from '../components/WeatherIcon';
 import WeeklyForecast from '../components/WeeklyForecast';
 import HourlyForecast from '../components/HourlyForecast';
+import moment from 'moment-timezone';
 
 const HomeScreen = () => {
   const [location, setLocation] = useState(null);
   const [currentWeather, setCurrentWeather] = useState(null);
-  const [hourlyForecastToday, setHourlyForecastToday] = useState([]); // Para o dia atual
-  const [hourlyForecastSelectedDay, setHourlyForecastSelectedDay] = useState([]); // Para o dia selecionado no WeeklyForecast
+  const [hourlyForecastToday, setHourlyForecastToday] = useState([]); 
+  const [hourlyForecastSelectedDay, setHourlyForecastSelectedDay] = useState([]); 
   const [weeklyForecast, setWeeklyForecast] = useState([]);
   const [errorMsg, setErrorMsg] = useState(null);
   const [cityName, setCityName] = useState('');
   const [selectedDay, setSelectedDay] = useState(null);
 
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permissão para acessar localização foi negada');
-        return;
+    const fetchWeatherData = async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Permissão para acessar localização foi negada');
+          return;
+        }
+
+        let location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Highest,
+        });
+        setLocation(location);
+
+        const fetchedCityName = await getCityName(location.coords.latitude, location.coords.longitude);
+        setCityName(fetchedCityName);
+
+        const current = await getCurrentWeather(fetchedCityName);
+        const hourlyToday = await getHourlyForecast(fetchedCityName);
+        const weekly = await getWeeklyForecast(fetchedCityName);
+
+        const timeZone = moment.tz.guess(true);
+        const today = moment().tz(timeZone).startOf('day');
+        const todayIndex = weekly.findIndex(day => moment(day.valid_date).isSame(today, 'day'));
+
+        const reorderedWeeklyForecast = weekly
+          .slice(todayIndex + 1)
+          .concat(weekly.slice(0, todayIndex + 1));
+
+        const filteredHourlyForecastToday = hourlyToday.filter(hour => {
+          const hourDate = moment(hour.timestamp_local).tz(timeZone);
+          return hourDate.isSameOrAfter(today) && hourDate.isSame(today, 'day');
+        });
+
+        setCurrentWeather(current);
+        setHourlyForecastToday(filteredHourlyForecastToday); 
+        setWeeklyForecast(reorderedWeeklyForecast);
+      } catch (error) {
+        setErrorMsg('Erro ao buscar dados de previsão do tempo.');
+        console.error(error);
       }
+    };
 
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
-
-      setLocation(location);
-
-      const fetchedCityName = await getCityName(location.coords.latitude, location.coords.longitude);
-      setCityName(fetchedCityName);
-
-      const current = await getCurrentWeather(fetchedCityName);
-      const hourlyToday = await getHourlyForecast(fetchedCityName);
-      const weekly = await getWeeklyForecast(fetchedCityName);
-
-      // Reorganizar a previsão semanal para começar pelo dia seguinte
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-
-      const reorderedWeeklyForecast = weekly
-        .filter(day => new Date(day.valid_date) >= tomorrow)
-        .concat(weekly.filter(day => new Date(day.valid_date) < tomorrow));
-
-      // Filtrar as horas já passadas do dia de hoje até 23:59
-      const filteredHourlyForecastToday = hourlyToday.filter(hour => {
-        const hourDate = new Date(hour.timestamp_local);
-        return hourDate >= today && hourDate.getDate() === today.getDate();
-      });
-
-      setCurrentWeather(current);
-      setHourlyForecastToday(filteredHourlyForecastToday); // Estado para o dia atual
-      setWeeklyForecast(reorderedWeeklyForecast);
-    })();
+    fetchWeatherData();
   }, []);
 
   const handleDayPress = async (day) => {
     if (selectedDay && selectedDay.valid_date === day.valid_date) {
       setSelectedDay(null);
-      setHourlyForecastSelectedDay([]); // Limpar a previsão horária do dia selecionado
+      setHourlyForecastSelectedDay([]);
     } else {
       setSelectedDay(day);
+      const timeZone = moment.tz.guess(true);
       const hourly = await getHourlyForecast(cityName, day.valid_date);
-      
-      // Filtrar para incluir apenas as horas do dia específico de 00:00 até 23:00
-      const startOfDay = new Date(day.valid_date);
-      startOfDay.setHours(0, 0, 0, 0);
 
-      const endOfDay = new Date(day.valid_date);
-      endOfDay.setHours(23, 59, 59, 999);
+      const startOfDay = moment(day.valid_date).startOf('day').tz(timeZone);
+      const endOfDay = moment(day.valid_date).endOf('day').tz(timeZone);
 
       const filteredHourlyForecastSelectedDay = hourly.filter(hour => {
-        const hourDate = new Date(hour.timestamp_local);
-        return hourDate >= startOfDay && hourDate <= endOfDay;
+        const hourDate = moment(hour.timestamp_local);
+        return hourDate.isSameOrAfter(startOfDay) && hourDate.isSameOrBefore(endOfDay);
       });
 
-      setHourlyForecastSelectedDay(filteredHourlyForecastSelectedDay); // Estado para o dia selecionado
+      setHourlyForecastSelectedDay(filteredHourlyForecastSelectedDay);
     }
   };
 
@@ -96,21 +98,20 @@ const HomeScreen = () => {
   return (
     <ScrollView style={{ flex: 1, padding: 20 }}>
       <View style={{ alignItems: 'center' }}>
-        <WeatherIcon condition={currentWeather.weather.description} timeOfDay={timeOfDay} size={100} />
+      <WeatherIcon iconCode={currentWeather.weather.icon} size={100} />
         <Text style={{ fontSize: 48 }}>{currentWeather.temp}°</Text>
-        <Text>{cityName}</Text> 
-        <Text>Umidade: {currentWeather.rh}%</Text> 
+        <Text>{cityName}</Text>
+        <Text>Umidade: {currentWeather.rh}%</Text>
         <Text>Probabilidade de Chuva: {currentWeather.precip} mm</Text>
       </View>
 
       <HourlyForecast forecast={hourlyForecastToday} />
 
-
       <WeeklyForecast 
         forecast={weeklyForecast} 
         onDayPress={handleDayPress} 
         selectedDay={selectedDay} 
-        hourlyForecast={hourlyForecastSelectedDay} // Estado separado para dias selecionados
+        hourlyForecast={hourlyForecastSelectedDay}
       />
     </ScrollView>
   );
