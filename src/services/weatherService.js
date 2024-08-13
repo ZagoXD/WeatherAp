@@ -1,4 +1,5 @@
 import axios from 'axios';
+import moment from 'moment-timezone';
 
 const API_KEY = '3856b072ab924f34a0c3a0f0024ba306';
 const BASE_URL = 'https://api.weatherbit.io/v2.0';
@@ -27,14 +28,48 @@ export const getCityName = async (latitude, longitude) => {
   }
 };
 
-export const getHourlyForecast = async (location, date) => {
+export const getCurrentWeather = async (latitude, longitude) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/current`, {
+      params: {
+        key: API_KEY,
+        lat: latitude,
+        lon: longitude,
+      },
+    });
+
+    const weatherData = response.data.data[0];
+    const timeZone = moment.tz.guess(true);
+
+    // Convertendo os horários do UTC para o fuso horário local do usuário
+    const sunriseLocal = moment.tz(weatherData.sunrise, 'HH:mm', 'UTC').tz(timeZone).format('HH:mm');
+    const sunsetLocal = moment.tz(weatherData.sunset, 'HH:mm', 'UTC').tz(timeZone).format('HH:mm');
+
+    return {
+      temp: weatherData.temp,
+      weather: weatherData.weather,
+      precip: weatherData.precip,
+      rh: weatherData.rh,
+      wind_spd: weatherData.wind_spd,
+      wind_cdir_full: weatherData.wind_cdir_full,
+      aqi: weatherData.aqi,
+      uv: weatherData.uv,
+      sunrise: sunriseLocal,
+      sunset: sunsetLocal,
+    };
+  } catch (error) {
+    console.error('Error fetching current weather:', error);
+    throw error;
+  }
+};
+
+export const getHourlyForecast = async (latitude, longitude) => {
   try {
     const response = await axios.get(`${BASE_URL}/forecast/hourly`, {
       params: {
         key: API_KEY,
-        city: location,
-        start_date: date,
-        end_date: date,
+        lat: latitude,
+        lon: longitude,
       },
     });
     return response.data.data;
@@ -44,34 +79,13 @@ export const getHourlyForecast = async (location, date) => {
   }
 };
 
-export const getCurrentWeather = async (location) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/current`, {
-      params: {
-        key: API_KEY,
-        city: location,
-      },
-    });
-
-    const weatherData = response.data.data[0];
-    return {
-      temp: weatherData.temp,
-      weather: weatherData.weather,
-      precip: weatherData.precip,
-      rh: weatherData.rh,
-    };
-  } catch (error) {
-    console.error('Error fetching current weather:', error);
-    throw error;
-  }
-};
-
-export const getWeeklyForecast = async (location) => {
+export const getWeeklyForecast = async (latitude, longitude) => {
   try {
     const response = await axios.get(`${BASE_URL}/forecast/daily`, {
       params: {
         key: API_KEY,
-        city: location,
+        lat: latitude,
+        lon: longitude,
         days: 7,
       },
     });

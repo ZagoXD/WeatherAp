@@ -1,24 +1,42 @@
 import React from 'react';
-import { ScrollView, View, Text } from 'react-native';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import WeatherIcon from './WeatherIcon';
+import { theme } from '../styles/theme';
 
 const HourlyForecast = ({ forecast }) => {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
       {forecast.map((hour, index) => {
-        const hourOfDay = new Date(hour.timestamp_local).getHours();
-        const timeOfDay = hourOfDay >= 6 && hourOfDay < 18 ? 'day' : 'night';
+        const formattedTime = new Date(hour.timestamp_local).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         return (
-          <View key={index} style={{ alignItems: 'center', margin: 10 }}>
-            <Text>{hour.timestamp_local.split('T')[1].slice(0, 5)}</Text>
+          <View key={index} style={styles.forecastItem}>
+            <Text style={styles.timeText}>{formattedTime}</Text>
             <WeatherIcon iconCode={hour.weather.icon} size={50} />
-            <Text>{hour.temp}°</Text>
+            <Text style={styles.tempText}>{hour.temp}°</Text>
           </View>
         );
       })}
     </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    paddingVertical: theme.spacing.small,
+  },
+  forecastItem: {
+    alignItems: 'center',
+    marginHorizontal: theme.spacing.small,
+  },
+  timeText: {
+    fontSize: theme.fonts.sizes.small,
+    color: theme.colors.text,
+  },
+  tempText: {
+    fontSize: theme.fonts.sizes.medium,
+    color: theme.colors.text,
+  },
+});
 
 export default HourlyForecast;
