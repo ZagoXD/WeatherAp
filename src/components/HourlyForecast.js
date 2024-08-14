@@ -3,7 +3,7 @@ import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import WeatherIcon from './WeatherIcon';
 import { theme } from '../styles/theme';
 
-const HourlyForecast = ({ forecast }) => {
+const HourlyForecast = ({ forecast, textColor }) => {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
       {forecast.map((hour, index) => {
@@ -11,9 +11,9 @@ const HourlyForecast = ({ forecast }) => {
 
         return (
           <View key={index} style={styles.forecastItem}>
-            <Text style={styles.timeText}>{formattedTime}</Text>
+            <Text style={[styles.timeText, { color: textColor }]}>{formattedTime}</Text>
             <WeatherIcon iconCode={hour.weather.icon} size={50} />
-            <Text style={styles.tempText}>{hour.temp}°</Text>
+            <Text style={[styles.tempText, { color: textColor }]}>{hour.temp}°</Text>
           </View>
         );
       })}
@@ -31,11 +31,11 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: theme.fonts.sizes.small,
-    color: theme.colors.text,
+    fontWeight: theme.fonts.weights.bold,
   },
   tempText: {
     fontSize: theme.fonts.sizes.medium,
-    color: theme.colors.text,
+    fontWeight: theme.fonts.weights.bold,
   },
 });
 

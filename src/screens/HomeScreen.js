@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import * as Location from 'expo-location';
 import { getCurrentWeather, getHourlyForecast, getWeeklyForecast } from '../services/weatherService';
 import WeatherIcon from '../components/WeatherIcon';
@@ -9,6 +9,8 @@ import moment from 'moment-timezone';
 import AdditionalWeatherInfo from '../components/AdditionalWeatherInfo';
 import { theme } from '../styles/theme';
 import axios from 'axios';
+import backgroundDay from '../assets/background1.png';
+import backgroundNight from '../assets/background2.png';
 
 const HomeScreen = () => {
   const [location, setLocation] = useState(null);
@@ -19,6 +21,8 @@ const HomeScreen = () => {
   const [cityName, setCityName] = useState('');
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [background, setBackground] = useState(backgroundDay);
+  const [textColor, setTextColor] = useState(theme.colors.text); // Inicialize com a cor padrão do tema
 
   useEffect(() => {
     const fetchWeatherData = async () => {
@@ -79,6 +83,20 @@ const HomeScreen = () => {
         setCurrentWeather(current);
         setHourlyForecastToday(filteredHourlyForecastToday);
         setWeeklyForecast(reorderedWeeklyForecast);
+
+        // Determinar se é dia ou noite
+        const currentTime = moment().tz(timeZone);
+        const sunriseTime = moment(current.sunrise, 'HH:mm').tz(timeZone);
+        const sunsetTime = moment(current.sunset, 'HH:mm').tz(timeZone);
+
+        if (currentTime.isBetween(sunriseTime, sunsetTime)) {
+          setBackground(backgroundDay);
+          setTextColor(theme.colors.text); // Cor preta para o dia
+        } else {
+          setBackground(backgroundNight);
+          setTextColor('#FFFFFF'); // Cor branca para a noite
+        }
+
       } catch (error) {
         setErrorMsg('Erro ao buscar dados de previsão do tempo.');
         console.error(error);
@@ -95,7 +113,7 @@ const HomeScreen = () => {
       try {
         const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json`, {
           params: {
-            key: '1360fdec45bc43a89bc5c9a01ca8e862', // Substitua por sua chave de API
+            key: '1360fdec45bc43a89bc5c9a01ca8e862',
             q: text,
             limit: 5,
           },
@@ -159,6 +177,20 @@ const HomeScreen = () => {
       setCurrentWeather(current);
       setHourlyForecastToday(filteredHourlyForecastToday);
       setWeeklyForecast(reorderedWeeklyForecast);
+
+      // Determinar se é dia ou noite
+      const currentTime = moment().tz(timeZone);
+      const sunriseTime = moment(current.sunrise, 'HH:mm').tz(timeZone);
+      const sunsetTime = moment(current.sunset, 'HH:mm').tz(timeZone);
+
+      if (currentTime.isBetween(sunriseTime, sunsetTime)) {
+        setBackground(backgroundDay);
+        setTextColor(theme.colors.text); // Cor preta para o dia
+      } else {
+        setBackground(backgroundNight);
+        setTextColor('#FFFFFF'); // Cor branca para a noite
+      }
+
     } catch (error) {
       console.error('Error fetching weather data for selected city:', error);
     }
@@ -173,71 +205,76 @@ const HomeScreen = () => {
   }
 
   return (
-    <FlatList
-      style={styles.container}
-      ListHeaderComponent={
-        <>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Digite o nome da cidade..."
-            value={query}
-            onChangeText={handleSearch}
-          />
-          
-          {suggestions.length > 0 && (
-            <FlatList
-              data={suggestions}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => handleCitySelect(item)}>
-                  <Text style={styles.suggestionText}>{item.formattedName}</Text>
-                </TouchableOpacity>
-              )}
-              style={styles.suggestionsList}
+    <ImageBackground source={background} style={styles.background}>
+        <FlatList
+        style={styles.container}
+        ListHeaderComponent={
+          <>
+            <TextInput
+              style={[styles.searchInput, { color: textColor, borderColor: textColor }]} // Aplicando cor dinâmica
+              placeholder="Digite o nome da cidade..."
+              placeholderTextColor={textColor} // Cor do placeholder dinâmica
+              value={query}
+              onChangeText={handleSearch}
             />
-          )}
+            
+            {suggestions.length > 0 && (
+              <FlatList
+                data={suggestions}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity onPress={() => handleCitySelect(item)}>
+                    <Text style={[styles.suggestionText, { color: textColor }]}>{item.formattedName}</Text>
+                  </TouchableOpacity>
+                )}
+                style={styles.suggestionsList}
+              />
+            )}
 
-          <View style={styles.header}>
-            <WeatherIcon iconCode={currentWeather.weather.icon} size={100} />
-            <Text style={styles.temperature}>{currentWeather.temp}°</Text>
-            <Text style={styles.cityName}>{cityName ? cityName : "Carregando..."}</Text>
-            <Text style={styles.infoText}>Umidade: {currentWeather.rh}%</Text>
-            <Text style={styles.infoText}>Probabilidade de Chuva: {currentWeather.precip} mm</Text>
-          </View>
-        </>
-      }
-      data={[{key: 'Hourly'}, {key: 'Weekly'}, {key: 'AdditionalInfo'}]}
-      renderItem={({item}) => {
-        if(item.key === 'Hourly') {
-          return <HourlyForecast forecast={hourlyForecastToday} />
-        } else if(item.key === 'Weekly') {
-          return <WeeklyForecast forecast={weeklyForecast} />
-        } else if(item.key === 'AdditionalInfo') {
-          return (
-            <AdditionalWeatherInfo
-              windSpeed={currentWeather.wind_spd}
-              windDirection={currentWeather.wind_cdir_full}
-              aqi={currentWeather.aqi}
-              uvIndex={currentWeather.uv}
-              sunrise={currentWeather.sunrise}
-              sunset={currentWeather.sunset}
-            />
-          )
+            <View style={styles.header}>
+              <WeatherIcon iconCode={currentWeather.weather.icon} size={100} />
+              <Text style={[styles.temperature, { color: textColor }]}>{currentWeather.temp}°</Text>
+              <Text style={[styles.cityName, { color: textColor }]}>{cityName ? cityName : "Carregando..."}</Text>
+              <Text style={[styles.infoText, { color: textColor }]}>Umidade: {currentWeather.rh}%</Text>
+              <Text style={[styles.infoText, { color: textColor }]}>Probabilidade de Chuva: {currentWeather.precip} mm</Text>
+            </View>
+          </>
         }
-      }}
-    />
+        data={[{key: 'Hourly'}, {key: 'Weekly'}, {key: 'AdditionalInfo'}]}
+        renderItem={({item}) => {
+          if(item.key === 'Hourly') {
+            return <HourlyForecast forecast={hourlyForecastToday} textColor={textColor} />
+          } else if(item.key === 'Weekly') {
+            return <WeeklyForecast forecast={weeklyForecast} />
+          } else if(item.key === 'AdditionalInfo') {
+            return (
+              <AdditionalWeatherInfo
+                windSpeed={currentWeather.wind_spd}
+                windDirection={currentWeather.wind_cdir_full}
+                aqi={currentWeather.aqi}
+                uvIndex={currentWeather.uv}
+                sunrise={currentWeather.sunrise}
+                sunset={currentWeather.sunset}
+              />
+            )
+          }
+        }}
+      />
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: theme.spacing.medium,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'transparent',
   },
   searchInput: {
     height: 40,
-    borderColor: theme.colors.borderColor,
     borderWidth: 1,
     borderRadius: theme.borderRadius.small,
     paddingLeft: 8,
@@ -252,7 +289,6 @@ const styles = StyleSheet.create({
     padding: theme.spacing.small,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderColor,
-    color: theme.colors.text,
   },
   header: {
     alignItems: 'center',
@@ -260,17 +296,14 @@ const styles = StyleSheet.create({
   },
   temperature: {
     fontSize: theme.fonts.sizes.xlarge,
-    color: theme.colors.text,
     fontFamily: theme.fonts.main,
   },
   cityName: {
     fontSize: theme.fonts.sizes.large,
-    color: theme.colors.text,
     fontFamily: theme.fonts.main,
   },
   infoText: {
     fontSize: theme.fonts.sizes.medium,
-    color: theme.colors.text,
     fontFamily: theme.fonts.secondary,
     marginTop: theme.spacing.small,
   },
