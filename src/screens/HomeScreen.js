@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Modal, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
 import { getCurrentWeather, getHourlyForecast, getWeeklyForecast } from '../services/weatherService';
 import WeatherIcon from '../components/WeatherIcon';
@@ -11,6 +11,7 @@ import { theme } from '../styles/theme';
 import axios from 'axios';
 import backgroundDay from '../assets/background1.png';
 import backgroundNight from '../assets/background2.png';
+import LoadingScreen from '../components/loadingScreen';
 
 const HomeScreen = () => {
   const [location, setLocation] = useState(null);
@@ -22,7 +23,8 @@ const HomeScreen = () => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [background, setBackground] = useState(backgroundDay);
-  const [textColor, setTextColor] = useState(theme.colors.text); // Inicialize com a cor padrão do tema
+  const [textColor, setTextColor] = useState(theme.colors.text);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchWeatherData = async () => {
@@ -76,7 +78,7 @@ const HomeScreen = () => {
         });
 
         const reorderedWeeklyForecast = [
-          ...weekly.slice(1),
+          ...weekly.slice(2),
           weekly[0]
         ];
 
@@ -148,41 +150,43 @@ const HomeScreen = () => {
 
   const handleCitySelect = async (city) => {
     try {
+      setModalVisible(true); // Mostrar o modal de carregamento
+  
       const cityQuery = `${city.name}, ${city.country}`;
       setQuery(cityQuery);
       setCityName(cityQuery);
       setSuggestions([]);
-
+  
       const latitude = city.latitude;
       const longitude = city.longitude;
-
+  
       const current = await getCurrentWeather(latitude, longitude);
       const hourlyToday = await getHourlyForecast(latitude, longitude);
       const weekly = await getWeeklyForecast(latitude, longitude);
-
+  
       const timeZone = moment.tz.guess(true);
       const today = moment().tz(timeZone).startOf('day');
       const endOfDay = moment().tz(timeZone).endOf('day');
-
+  
       const filteredHourlyForecastToday = hourlyToday.filter(hour => {
         const hourDate = moment(hour.timestamp_local).tz(timeZone);
         return hourDate.isSameOrAfter(today) && hourDate.isSameOrBefore(endOfDay);
       });
-
+  
       const reorderedWeeklyForecast = [
         ...weekly.slice(1),
         weekly[0]
       ];
-
+  
       setCurrentWeather(current);
       setHourlyForecastToday(filteredHourlyForecastToday);
       setWeeklyForecast(reorderedWeeklyForecast);
-
+  
       // Determinar se é dia ou noite
       const currentTime = moment().tz(timeZone);
       const sunriseTime = moment(current.sunrise, 'HH:mm').tz(timeZone);
       const sunsetTime = moment(current.sunset, 'HH:mm').tz(timeZone);
-
+  
       if (currentTime.isBetween(sunriseTime, sunsetTime)) {
         setBackground(backgroundDay);
         setTextColor(theme.colors.text); // Cor preta para o dia
@@ -190,9 +194,11 @@ const HomeScreen = () => {
         setBackground(backgroundNight);
         setTextColor('#FFFFFF'); // Cor branca para a noite
       }
-
+  
+      setModalVisible(false); // Ocultar o modal após o carregamento
     } catch (error) {
       console.error('Error fetching weather data for selected city:', error);
+      setModalVisible(false); // Ocultar o modal em caso de erro
     }
   };
 
@@ -201,15 +207,28 @@ const HomeScreen = () => {
   }
 
   if (!currentWeather) {
-    return <Text>Aguardando dados meteorológicos...</Text>;
+    return <LoadingScreen />;
   }
 
   return (
     <ImageBackground source={background} style={styles.background}>
-        <FlatList
+      <FlatList
         style={styles.container}
         ListHeaderComponent={
           <>
+            {/* Modal para mostrar o indicador de carregamento */}
+            <Modal
+              transparent={true}
+              animationType="fade"
+              visible={modalVisible}
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <View style={styles.modalContainer}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Text style={styles.loadingText}>Carregando...</Text>
+              </View>
+            </Modal>
+
             <TextInput
               style={[styles.searchInput, { color: textColor, borderColor: textColor }]} 
               placeholder="Digite o nome da cidade..."
@@ -224,7 +243,7 @@ const HomeScreen = () => {
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
                   <TouchableOpacity onPress={() => handleCitySelect(item)}>
-                    <Text style={[styles.suggestionText, { color: textColor }]}>{item.formattedName}</Text>
+                    <Text style={[styles.suggestionText]}>{item.formattedName}</Text>
                   </TouchableOpacity>
                 )}
                 style={styles.suggestionsList}
@@ -306,6 +325,18 @@ const styles = StyleSheet.create({
     fontSize: theme.fonts.sizes.medium,
     fontFamily: theme.fonts.secondary,
     marginTop: theme.spacing.small,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: theme.fonts.sizes.medium,
+    color: '#FFFFFF',
+    fontFamily: theme.fonts.main,
   },
 });
 
