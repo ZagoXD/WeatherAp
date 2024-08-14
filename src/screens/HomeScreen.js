@@ -211,9 +211,9 @@ const HomeScreen = () => {
         ListHeaderComponent={
           <>
             <TextInput
-              style={[styles.searchInput, { color: textColor, borderColor: textColor }]} // Aplicando cor dinâmica
+              style={[styles.searchInput, { color: textColor, borderColor: textColor }]} 
               placeholder="Digite o nome da cidade..."
-              placeholderTextColor={textColor} // Cor do placeholder dinâmica
+              placeholderTextColor={textColor}
               value={query}
               onChangeText={handleSearch}
             />
@@ -236,7 +236,7 @@ const HomeScreen = () => {
               <Text style={[styles.temperature, { color: textColor }]}>{currentWeather.temp}°</Text>
               <Text style={[styles.cityName, { color: textColor }]}>{cityName ? cityName : "Carregando..."}</Text>
               <Text style={[styles.infoText, { color: textColor }]}>Umidade: {currentWeather.rh}%</Text>
-              <Text style={[styles.infoText, { color: textColor }]}>Probabilidade de Chuva: {currentWeather.precip} mm</Text>
+              <Text style={[styles.infoText, { color: textColor }]}>Probabilidade de Chuva: {currentWeather.precip} mm/h</Text>
             </View>
           </>
         }

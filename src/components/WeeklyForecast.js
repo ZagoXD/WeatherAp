@@ -11,7 +11,7 @@ const WeeklyForecast = ({ forecast }) => {
           <Text style={styles.dayText}>
             {new Date(day.valid_date).toLocaleDateString('pt-BR', { weekday: 'long' })}
           </Text>
-          <WeatherIcon iconCode={day.weather.icon} size={50} />
+          <WeatherIcon iconCode={day.weather.icon} size={50} style={styles.iconW} />
           <Text style={styles.tempText}>{day.min_temp}° / {day.max_temp}°</Text>
         </View>
       ))}
@@ -35,12 +35,18 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.small,
   },
   dayText: {
+    flex: 0.4,
     fontSize: theme.fonts.sizes.medium,
     color: theme.colors.text,
   },
   tempText: {
+    flex: 0.5,
     fontSize: theme.fonts.sizes.large,
     color: theme.colors.text,
+    textAlign: 'right'
+  },
+  iconW: {
+    flex: 0.1
   },
 });
 
