@@ -1,10 +1,11 @@
 import axios from 'axios';
 import moment from 'moment-timezone';
 import * as Location from 'expo-location';
+import { WEATHERBIT_API_KEY, OPEN_API_KEY } from '../../config.js'
 
-const API_KEY = '3856b072ab924f34a0c3a0f0024ba306';
+const API_KEY = WEATHERBIT_API_KEY;
 const BASE_URL = 'https://api.weatherbit.io/v2.0';
-const OPENCAGE_API_KEY = '1360fdec45bc43a89bc5c9a01ca8e862';
+const OPENCAGE_API_KEY = OPEN_API_KEY;
 
 export const getCityName = async (latitude, longitude) => {
   try {

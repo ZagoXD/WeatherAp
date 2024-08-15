@@ -12,6 +12,7 @@ import LoadingScreen from '../components/loadingScreen';
 import BackgroundMapper from '../components/BackgroundMapper';
 import moment from 'moment';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { OPEN_API_KEY } from '../../config.js'
 
 const HomeScreen = ({ route, navigation }) => {
   const [location, setLocation] = useState(null);
@@ -94,7 +95,7 @@ const HomeScreen = ({ route, navigation }) => {
       try {
         const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json`, {
           params: {
-            key: '1360fdec45bc43a89bc5c9a01ca8e862',
+            key: OPEN_API_KEY,
             q: text,
             limit: 5,
           },
