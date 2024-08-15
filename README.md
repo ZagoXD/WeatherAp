@@ -75,4 +75,4 @@ O **WeatherApp** é um aplicativo móvel desenvolvido em React Native que fornec
 
 ## Licença
 
-Este projeto está licenciado sob a Licença MIT 
+Este projeto está licenciado sob a Licença MIT :D
