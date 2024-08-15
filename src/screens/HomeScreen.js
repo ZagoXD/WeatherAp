@@ -11,8 +11,9 @@ import axios from 'axios';
 import LoadingScreen from '../components/loadingScreen';
 import BackgroundMapper from '../components/BackgroundMapper';
 import moment from 'moment';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const HomeScreen = () => {
+const HomeScreen = ({ route, navigation }) => {
   const [location, setLocation] = useState(null);
   const [currentWeather, setCurrentWeather] = useState(null);
   const [hourlyForecastToday, setHourlyForecastToday] = useState([]);
@@ -23,10 +24,24 @@ const HomeScreen = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [textColor, setTextColor] = useState(theme.colors.text);
   const [modalVisible, setModalVisible] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
 
   const currentDate = moment().format('DD / MM / YYYY');
 
   useEffect(() => {
+    const loadRecentSearches = async () => {
+      try {
+        const savedSearches = await AsyncStorage.getItem('recentSearches');
+        if (savedSearches) {
+          setRecentSearches(JSON.parse(savedSearches));
+        }
+      } catch (error) {
+        console.error('Error loading recent searches:', error);
+      }
+    };
+
+    loadRecentSearches();
+
     const fetchWeatherData = async () => {
       try {
         const { location, cityName } = await getLocationAndCityName();
@@ -51,6 +66,26 @@ const HomeScreen = () => {
 
     fetchWeatherData();
   }, []);
+
+  useEffect(() => {
+    if (route.params && route.params.selectedCity) {
+      handleCitySelect(route.params.selectedCity);
+      navigation.setParams({ selectedCity: null }); // Limpar o parâmetro após o uso
+    }
+  }, [route.params]);
+
+  const saveRecentSearch = async (city) => {
+    try {
+      let updatedSearches = [city, ...recentSearches];
+      if (updatedSearches.length > 4) {
+        updatedSearches = updatedSearches.slice(0, 4);
+      }
+      setRecentSearches(updatedSearches);
+      await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    } catch (error) {
+      console.error('Error saving recent search:', error);
+    }
+  };
 
   const handleSearch = async (text) => {
     setQuery(text);
@@ -114,6 +149,8 @@ const HomeScreen = () => {
 
       setTextColor(isDaytime(current) ? theme.colors.text : '#FFFFFF');
       setModalVisible(false); // Ocultar o modal após o carregamento
+
+      await saveRecentSearch(city);
     } catch (error) {
       console.error('Error fetching weather data for selected city:', error);
       setModalVisible(false); // Ocultar o modal em caso de erro
@@ -148,13 +185,13 @@ const HomeScreen = () => {
             </Modal>
 
             <TextInput
-              style={[styles.searchInput, { color: textColor, borderColor: textColor }]} 
+              style={[styles.searchInput, { color: textColor, borderColor: textColor }]}
               placeholder="Digite o nome da cidade..."
               placeholderTextColor={textColor}
               value={query}
               onChangeText={handleSearch}
             />
-            
+
             {suggestions.length > 0 && (
               <FlatList
                 data={suggestions}
@@ -179,26 +216,26 @@ const HomeScreen = () => {
         data={[{ key: 'Hourly' }, { key: 'Weekly' }, { key: 'TemperatureGraph' }, { key: 'AdditionalInfo' }]}
         renderItem={({ item }) => {
           if (item.key === 'Hourly') {
-              return <HourlyForecast forecast={hourlyForecastToday} textColor={textColor} />;
+            return <HourlyForecast forecast={hourlyForecastToday} textColor={textColor} />;
           } else if (item.key === 'Weekly') {
-              return <WeeklyForecast forecast={weeklyForecast} />;
+            return <WeeklyForecast forecast={weeklyForecast} />;
           } else if (item.key === 'TemperatureGraph') {
-              return <TemperatureGraph weeklyForecast={weeklyForecast} />;
+            return <TemperatureGraph weeklyForecast={weeklyForecast} />;
           } else if (item.key === 'AdditionalInfo') {
-              return (
-                  <AdditionalWeatherInfo
-                      windSpeed={currentWeather.wind_spd}
-                      windDirection={currentWeather.wind_cdir_full}
-                      aqi={currentWeather.aqi}
-                      uvIndex={currentWeather.uv}
-                      sunrise={currentWeather.sunrise}
-                      sunset={currentWeather.sunset}
-                      humidity={currentWeather.rh}
-                      precipitation={currentWeather.precip}
-                  />
-              );
+            return (
+              <AdditionalWeatherInfo
+                windSpeed={currentWeather.wind_spd}
+                windDirection={currentWeather.wind_cdir_full}
+                aqi={currentWeather.aqi}
+                uvIndex={currentWeather.uv}
+                sunrise={currentWeather.sunrise}
+                sunset={currentWeather.sunset}
+                humidity={currentWeather.rh}
+                precipitation={currentWeather.precip}
+              />
+            );
           }
-      }}
+        }}
       />
     </BackgroundMapper>
   );
@@ -209,6 +246,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: theme.spacing.medium,
     backgroundColor: 'transparent',
+    marginTop: theme.spacing.xxlarge,
   },
   searchInput: {
     height: 40,
