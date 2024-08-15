@@ -1,5 +1,6 @@
 import axios from 'axios';
 import moment from 'moment-timezone';
+import * as Location from 'expo-location';
 
 const API_KEY = '3856b072ab924f34a0c3a0f0024ba306';
 const BASE_URL = 'https://api.weatherbit.io/v2.0';
@@ -90,9 +91,67 @@ export const getWeeklyForecast = async (latitude, longitude) => {
       },
     });
 
-    return response.data.data;
+    let forecast = response.data.data;
+
+    const timeZone = moment.tz.guess(true);
+    const today = moment().tz(timeZone).startOf('day');
+
+    // Filtra os dias para começar no próximo dia em relação ao dia atual
+    forecast = forecast.filter(day => {
+      const dayDate = moment(day.valid_date).tz(timeZone).startOf('day');
+      return dayDate.isAfter(today);
+    });
+
+    // Garante que apenas os próximos 6 dias sejam exibidos
+    forecast = forecast.slice(0, 6);
+
+    return forecast;
   } catch (error) {
     console.error('Error fetching weekly forecast:', error);
     throw error;
   }
+};
+
+// Função para obter a localização e nome da cidade
+export const getLocationAndCityName = async () => {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      throw new Error('Permissão para acessar localização foi negada');
+    }
+
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Highest,
+    });
+
+    const { latitude, longitude } = location.coords;
+
+    const cityName = await getCityName(latitude, longitude);
+    return { location, cityName };
+  } catch (error) {
+    console.error('Error fetching location and city name:', error);
+    throw error;
+  }
+};
+
+// Função para determinar se é dia ou noite
+export const isDaytime = (currentWeather) => {
+  const timeZone = moment.tz.guess(true);
+  const currentTime = moment().tz(timeZone);
+  const sunriseTime = moment(currentWeather.sunrise, 'HH:mm').tz(timeZone);
+  const sunsetTime = moment(currentWeather.sunset, 'HH:mm').tz(timeZone);
+
+  return currentTime.isBetween(sunriseTime, sunsetTime);
+};
+
+// Função para processar previsões horárias
+export const filterHourlyForecastToday = (hourlyToday) => {
+  const timeZone = moment.tz.guess(true);
+  const today = moment().tz(timeZone).startOf('day');
+  const endOfDay = moment().tz(timeZone).endOf('day');
+
+  return hourlyToday.filter(hour => {
+    const hourDate = moment(hour.timestamp_local).tz(timeZone);
+    return hourDate.isSameOrAfter(today) && hourDate.isSameOrBefore(endOfDay);
+  });
 };

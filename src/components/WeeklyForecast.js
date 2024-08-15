@@ -8,9 +8,14 @@ const WeeklyForecast = ({ forecast }) => {
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       {forecast.map((day, index) => (
         <View key={index} style={styles.forecastItem}>
-          <Text style={styles.dayText}>
-            {new Date(day.valid_date).toLocaleDateString('pt-BR', { weekday: 'long' })}
-          </Text>
+          <View style={styles.dayContainer}>
+            <Text style={styles.dayText}>
+              {new Date(day.valid_date).toLocaleDateString('pt-BR', { weekday: 'long' })}
+            </Text>
+            <Text style={styles.dateText}>
+              {new Date(day.valid_date).toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
+            </Text>
+          </View>
           <WeatherIcon iconCode={day.weather.icon} size={50} style={styles.iconW} />
           <Text style={styles.tempText}>{day.min_temp}° / {day.max_temp}°</Text>
         </View>
@@ -34,10 +39,16 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.borderColor,
     marginBottom: theme.spacing.small,
   },
-  dayText: {
+  dayContainer: {
     flex: 0.4,
+  },
+  dayText: {
     fontSize: theme.fonts.sizes.medium,
     color: theme.colors.text,
+  },
+  dateText: {
+    fontSize: theme.fonts.sizes.small,
+    color: theme.colors.textSecondary,
   },
   tempText: {
     flex: 0.5,

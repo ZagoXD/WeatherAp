@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../styles/theme';
 
-const AdditionalWeatherInfo = ({ windSpeed, windDirection, aqi, uvIndex, sunrise, sunset }) => {
+const AdditionalWeatherInfo = ({ windSpeed, windDirection, aqi, uvIndex, sunrise, sunset, humidity, precipitation }) => {
   const windDirectionTranslations = {
     "N": "Norte",
     "NNE": "Norte-Nordeste",
@@ -49,6 +49,8 @@ const AdditionalWeatherInfo = ({ windSpeed, windDirection, aqi, uvIndex, sunrise
       <Text style={styles.infoText}>Índice UV: {uvIndex}</Text>
       <Text style={styles.infoText}>Nascer do Sol: {sunrise}</Text>
       <Text style={styles.infoText}>Pôr do Sol: {sunset}</Text>
+      <Text style={styles.infoText}>Umidade: {humidity}%</Text>
+      <Text style={styles.infoText}>Probabilidade de Chuva: {precipitation} mm/h</Text>
     </View>
   );
 };
