@@ -104,7 +104,7 @@ export const getWeeklyForecast = async (latitude, longitude) => {
     });
 
     // Garante que apenas os próximos 6 dias sejam exibidos
-    forecast = forecast.slice(0, 6);
+    forecast = forecast.slice(1, 6);
 
     return forecast;
   } catch (error) {
@@ -127,8 +127,23 @@ export const getLocationAndCityName = async () => {
 
     const { latitude, longitude } = location.coords;
 
-    const cityName = await getCityName(latitude, longitude);
-    return { location, cityName };
+    const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json`, {
+      params: {
+        key: OPENCAGE_API_KEY,
+        q: `${latitude}+${longitude}`,
+        pretty: 1,
+      },
+    });
+
+    if (response.data.results && response.data.results.length > 0) {
+      const result = response.data.results[0];
+      const city = result.components.city || result.components.town || result.components.village || 'Unknown Location';
+      const country = result.components.country || '';
+
+      return { location, cityName: `${city}, ${country}` };
+    }
+
+    return { location, cityName: 'Unknown Location' };
   } catch (error) {
     console.error('Error fetching location and city name:', error);
     throw error;

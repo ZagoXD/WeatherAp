@@ -71,62 +71,74 @@ const HomeScreen = ({ route, navigation }) => {
   useEffect(() => {
     if (route.params && route.params.selectedCity) {
       handleCitySelect(route.params.selectedCity);
-      navigation.setParams({ selectedCity: null }); // Limpar o parâmetro após o uso
+      navigation.setParams({ selectedCity: null }); 
     }
   }, [route.params]);
 
   const saveRecentSearch = async (city) => {
     try {
-      let updatedSearches = [city, ...recentSearches];
-      if (updatedSearches.length > 4) {
-        updatedSearches = updatedSearches.slice(0, 4);
-      }
-      setRecentSearches(updatedSearches);
-      await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+        let updatedSearches = recentSearches.filter(
+            (search) => search.formattedName !== city.formattedName
+        );
+
+        updatedSearches = [city, ...updatedSearches];
+
+        // Limite a lista a 10 elementos
+        if (updatedSearches.length > 10) {
+            updatedSearches = updatedSearches.slice(0, 10);
+        }
+
+        setRecentSearches(updatedSearches);
+        await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
     } catch (error) {
-      console.error('Error saving recent search:', error);
+        console.error('Error saving recent search:', error);
     }
-  };
+};
 
   const handleSearch = async (text) => {
     setQuery(text);
 
     if (text.length > 2) {
-      try {
-        const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json`, {
-          params: {
-            key: OPEN_API_KEY,
-            q: text,
-            limit: 5,
-          },
-        });
+        try {
+            const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json`, {
+                params: {
+                    key: OPEN_API_KEY,
+                    q: text,
+                    limit: 5,
+                },
+            });
 
-        const results = response.data.results.map(result => {
-          const city = result.components.city || result.components.town || result.components.village || result.components.municipality || result.components._normalized_city || result.components.county;
-          const country = result.components.country;
+            const results = response.data.results.map(result => {
+                const city = result.components.city || result.components.town || result.components.village || result.components.municipality || result.components._normalized_city || result.components.county;
+                const country = result.components.country;
+                const type = result.components._type;
 
-          if (!city || !country) {
-            console.error('City or country is missing:', result);
-            return null;
-          }
+                if (!city || !country || (type !== 'city' && type !== 'town' && type !== 'village' && type !== 'municipality')) {
+                    return null;
+                }
 
-          return {
-            name: city,
-            country: country,
-            formattedName: `${city}, ${country}`,
-            latitude: result.geometry.lat,
-            longitude: result.geometry.lng,
-          };
-        }).filter(item => item !== null);
+                return {
+                    name: city,
+                    country: country,
+                    formattedName: `${city}, ${country}`,
+                    latitude: result.geometry.lat,
+                    longitude: result.geometry.lng,
+                };
+            }).filter(item => item !== null);
 
-        setSuggestions(results);
-      } catch (error) {
-        console.error('Error fetching city suggestions:', error);
-      }
+            const uniqueResults = Array.from(new Set(results.map(a => a.formattedName)))
+                .map(name => {
+                    return results.find(a => a.formattedName === name);
+                });
+
+            setSuggestions(uniqueResults);
+        } catch (error) {
+            console.error('Error fetching city suggestions:', error);
+        }
     } else {
-      setSuggestions([]);
+        setSuggestions([]);
     }
-  };
+};
 
   const handleCitySelect = async (city) => {
     try {
@@ -209,7 +221,7 @@ const HomeScreen = ({ route, navigation }) => {
             <View style={styles.header}>
               <WeatherIcon iconCode={currentWeather.weather.icon} size={100} />
               <Text style={[styles.temperature, { color: textColor }]}>{currentWeather.temp}°</Text>
-              <Text style={[styles.cityName, { color: textColor }]}>{cityName ? cityName : "Carregando..."}</Text>
+              <Text style={[styles.cityName, { color: textColor }]}>{cityName ? cityName : "Carregando..."} </Text>
               <Text style={[styles.dateText, { color: textColor }]}>{currentDate}</Text>
             </View>
           </>
